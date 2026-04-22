@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Shatter – Sir Ronny Smart</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;600&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --red: #ff2d2d;
+    --dark: #0a0a0a;
+    --glass: rgba(255,255,255,0.07);
+  }
+
+  html, body {
+    width: 100%; height: 100%;
+    background: var(--dark);
+    overflow: hidden;
+    font-family: 'Inter', sans-serif;
+    touch-action: none;
+  }
+
+  /* ── LANDING UI ── */
+  #landing {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 28px;
+    z-index: 100;
+    background: radial-gradient(ellipse at 50% 30%, #1a0000 0%, #0a0a0a 70%);
+  }
+
+  #landing h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(52px, 14vw, 88px);
+    color: white;
+    letter-spacing: 4px;
+    line-height: 1;
+    text-align: center;
+  }
+
+  #landing h1 span { color: var(--red); }
+
+  #landing p {
+    font-size: 14px;
+    color: rgba(255,255,255,0.45);
+    text-align: center;
+    max-width: 280px;
+    line-height: 1.6;
+  }
+
+  .btn-capture {
+    background: var(--red);
+    color: white;
+    border: none;
+    border-radius: 50px;
+    padding: 18px 48px;
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    cursor: pointer;
+    box-shadow: 0 0 40px rgba(255,45,45,0.5);
+    transition: transform 0.15s, box-shadow 0.15s;
+    text-transform: uppercase;
+  }
+
+  .btn-capture:active { transform: scale(0.96); box-shadow: 0 0 20px rgba(255,45,45,0.3); }
+
+  .hint {
+    font-size: 11px;
+    color: rgba(255,255,255,0.2);
+    text-align: center;
+    max-width: 260px;
+    line-height: 1.7;
+  }
+
+  /* crack lines on landing */
+  #landing::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(135deg, transparent 49.5%, rgba(255,45,45,0.08) 49.5%, rgba(255,45,45,0.08) 50.5%, transparent 50.5%),
+      linear-gradient(45deg,  transparent 49.5%, rgba(255,45,45,0.05) 49.5%, rgba(255,45,45,0.05) 50.5%, transparent 50.5%);
+    background-size: 60px 60px;
+    pointer-events: none;
+  }
+
+  /* ── CANVAS LAYER ── */
+  #physics-canvas {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: none;
+    touch-action: none;
+  }
+
+  /* ── HUD ── */
+  #hud {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: none;
+    gap: 12px;
+    z-index: 200;
+    align-items: center;
+  }
+
+  .hud-btn {
+    background: rgba(255,255,255,0.1);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.15);
+    color: white;
+    border-radius: 50px;
+    padding: 12px 22px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.2s;
+  }
+
+  .hud-btn:active { background: rgba(255,255,255,0.25); }
+  .hud-btn.danger { background: rgba(255,45,45,0.3); border-color: rgba(255,45,45,0.4); }
+  .hud-btn.danger:active { background: rgba(255,45,45,0.6); }
+
+  /* ── FLASH overlay ── */
+  #flash {
+    position: fixed;
+    inset: 0;
+    background: white;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 999;
+    transition: opacity 0.05s;
+  }
+
+  /* ── SHAKE indicator ── */
+  #shake-ring {
+    position: fixed;
+    top: 50%; left: 50%;
+    width: 0; height: 0;
+    border-radius: 50%;
+    border: 3px solid var(--red);
+    transform: translate(-50%, -50%);
+    opacity: 0;
+    pointer-events: none;
+    z-index: 300;
+  }
+
+  /* ── STATUS ── */
+  #status {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(10px);
+    color: white;
+    font-size: 12px;
+    padding: 8px 18px;
+    border-radius: 50px;
+    z-index: 500;
+    display: none;
+    border: 1px solid rgba(255,255,255,0.1);
+  }
+</style>
+</head>
+<body>
+
+<!-- Landing -->
+<div id="landing">
+  <h1>SHAT<span>TER</span></h1>
+  <p>Capture your screen and watch it crack, fall & explode with real physics.</p>
+  <button class="btn-capture" id="captureBtn">📸 Capture My Screen</button>
+  <p class="hint">You'll be asked to share your screen.<br>The app takes one snapshot — then destroys it.</p>
+</div>
+
+<!-- Physics canvas -->
+<canvas id="physics-canvas"></canvas>
+
+<!-- HUD -->
+<div id="hud" style="display:none; flex-direction:row;">
+  <button class="hud-btn danger" id="explodeBtn">💥 Explode</button>
+  <button class="hud-btn" id="resetBtn">🔄 Recapture</button>
+  <button class="hud-btn" id="gravBtn">🌀 Gravity</button>
+</div>
+
+<!-- Flash -->
+<div id="flash"></div>
+
+<!-- Shake ring -->
+<div id="shake-ring"></div>
+
+<!-- Status -->
+<div id="status"></div>
+
+<script>
+// ─────────────────────────────────────────
+// GLOBALS
+// ─────────────────────────────────────────
+const canvas    = document.getElementById('physics-canvas');
+const ctx       = canvas.getContext('2d');
+const landing   = document.getElementById('landing');
+const hud       = document.getElementById('hud');
+const flash     = document.getElementById('flash');
+const shakeRing = document.getElementById('shake-ring');
+const statusEl  = document.getElementById('status');
+
+let engine, world, runner;
+let shards = [];
+let walls  = [];
+let capturedImage = null;
+let gravityAngle = Math.PI / 2; // downward
+let animFrame;
+let lastShakeTime = 0;
+let lastAcc = { x: 0, y: 0, z: 0 };
+let pinchStartDist = 0;
+let pinchMidX = 0, pinchMidY = 0;
+let gravityMode = 0; // 0=down,1=left,2=up,3=right
+
+const SHARD_COLS = 8;
+const SHARD_ROWS = 14;
+const BOUNCE     = 0.45;
+const FRICTION   = 0.05;
+
+// ─────────────────────────────────────────
+// STATUS
+// ─────────────────────────────────────────
+function showStatus(msg, duration = 2000) {
+  statusEl.textContent = msg;
+  statusEl.style.display = 'block';
+  clearTimeout(statusEl._t);
+  statusEl._t = setTimeout(() => statusEl.style.display = 'none', duration);
+}
+
+// ─────────────────────────────────────────
+// CAPTURE SCREEN
+// ─────────────────────────────────────────
+document.getElementById('captureBtn').addEventListener('click', startCapture);
+document.getElementById('resetBtn').addEventListener('click', startCapture);
+
+async function startCapture() {
+  try {
+    showStatus('Select screen to share…', 8000);
+    const stream = await navigator.mediaDevices.getDisplayMedia({
+      video: { cursor: 'always' },
+      audio: false
+    });
+
+    const video = document.createElement('video');
+    video.srcObject = stream;
+    video.muted = true;
+
+    await new Promise(res => { video.onloadedmetadata = res; });
+    await video.play();
+
+    // Flash effect
+    flash.style.opacity = '1';
+    setTimeout(() => flash.style.opacity = '0', 150);
+
+    // Draw to offscreen canvas
+    const off = document.createElement('canvas');
+    off.width  = video.videoWidth  || window.innerWidth;
+    off.height = video.videoHeight || window.innerHeight;
+    const octx = off.getContext('2d');
+    octx.drawImage(video, 0, 0, off.width, off.height);
+
+    stream.getTracks().forEach(t => t.stop());
+
+    capturedImage = off;
+    showStatus('💥 Shattering…', 1500);
+    setTimeout(() => initShatter(), 300);
+
+  } catch (err) {
+    showStatus('Screen share cancelled or not supported.', 3000);
+    console.warn(err);
+  }
+}
+
+// ─────────────────────────────────────────
+// INIT MATTER.JS
+// ─────────────────────────────────────────
+function initMatter() {
+  if (engine) Matter.Runner.stop(runner);
+
+  engine = Matter.Engine.create({ gravity: { x: 0, y: 1 } });
+  world  = engine.world;
+  runner = Matter.Runner.create();
+  Matter.Runner.run(runner, engine);
+
+  buildWalls();
+}
+
+function buildWalls() {
+  if (walls.length) walls.forEach(w => Matter.World.remove(world, w));
+  walls = [];
+  const W = canvas.width, H = canvas.height;
+  const thick = 60;
+  const opts = { isStatic: true, restitution: BOUNCE, friction: FRICTION };
+
+  walls = [
+    Matter.Bodies.rectangle(W/2, H + thick/2, W + 200, thick, opts), // floor
+    Matter.Bodies.rectangle(-thick/2, H/2, thick, H + 200, opts),     // left
+    Matter.Bodies.rectangle(W + thick/2, H/2, thick, H + 200, opts),  // right
+    Matter.Bodies.rectangle(W/2, -thick/2, W + 200, thick, opts),     // ceiling
+  ];
+  Matter.World.add(world, walls);
+}
+
+// ─────────────────────────────────────────
+// SHATTER
+// ─────────────────────────────────────────
+function initShatter() {
+  landing.style.display = 'none';
+  canvas.style.display = 'block';
+  hud.style.display = 'flex';
+
+  canvas.width  = window.innerWidth;
+  canvas.height = window.innerHeight;
+
+  initMatter();
+  createShards();
+  startRender();
+
+  // Controls
+  setupTouchControls();
+  setupDeviceMotion();
+  setupButtons();
+}
+
+function createShards() {
+  shards.forEach(s => Matter.World.remove(world, s.body));
+  shards = [];
+
+  const W = canvas.width;
+  const H = canvas.height;
+  const sw = W / SHARD_COLS;
+  const sh = H / SHARD_ROWS;
+
+  for (let row = 0; row < SHARD_ROWS; row++) {
+    for (let col = 0; col < SHARD_COLS; col++) {
+      const cx = col * sw + sw / 2;
+      const cy = row * sh + sh / 2;
+
+      // Irregular polygon (5–7 vertices) for cracked-glass look
+      const verts = makeShardVerts(sw, sh);
+
+      let body;
+      try {
+        body = Matter.Bodies.fromVertices(cx, cy, verts, {
+          restitution: BOUNCE,
+          friction: FRICTION,
+          frictionAir: 0.01,
+          density: 0.002,
+        }, true);
+      } catch(e) {
+        body = Matter.Bodies.rectangle(cx, cy, sw - 2, sh - 2, {
+          restitution: BOUNCE, friction: FRICTION, frictionAir: 0.01, density: 0.002
+        });
+      }
+
+      // Random tiny initial tumble
+      Matter.Body.setVelocity(body, {
+        x: (Math.random() - 0.5) * 2,
+        y: (Math.random() - 0.5) * 2
+      });
+      Matter.Body.setAngularVelocity(body, (Math.random() - 0.5) * 0.1);
+
+      Matter.World.add(world, body);
+
+      shards.push({
+        body,
+        srcX: col * sw,
+        srcY: row * sh,
+        srcW: sw,
+        srcH: sh,
+        col, row
+      });
+    }
+  }
+
+  // Stagger-drop: briefly hold pieces then release
+  Matter.Engine.update(engine, 16);
+}
+
+function makeShardVerts(w, h) {
+  // Build a roughly rectangular polygon with jagged edges
+  const n = 5 + Math.floor(Math.random() * 3);
+  const verts = [];
+  const hw = w / 2, hh = h / 2;
+
+  // Corners with jitter
+  const corners = [
+    [-hw, -hh], [hw, -hh], [hw, hh], [-hw, hh]
+  ];
+
+  corners.forEach(([bx, by], i) => {
+    verts.push({
+      x: bx + (Math.random() - 0.5) * w * 0.25,
+      y: by + (Math.random() - 0.5) * h * 0.25
+    });
+    // Add midpoint jitter
+    if (Math.random() > 0.4) {
+      const nx = corners[(i + 1) % 4][0];
+      const ny = corners[(i + 1) % 4][1];
+      verts.push({
+        x: (bx + nx) / 2 + (Math.random() - 0.5) * w * 0.3,
+        y: (by + ny) / 2 + (Math.random() - 0.5) * h * 0.3
+      });
+    }
+  });
+
+  return verts;
+}
+
+// ─────────────────────────────────────────
+// RENDER LOOP
+// ─────────────────────────────────────────
+function startRender() {
+  if (animFrame) cancelAnimationFrame(animFrame);
+  renderLoop();
+}
+
+function renderLoop() {
+  animFrame = requestAnimationFrame(renderLoop);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Dark background
+  ctx.fillStyle = '#111';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  const W = canvas.width;
+  const H = canvas.height;
+
+  shards.forEach(s => {
+    const b   = s.body;
+    const pos = b.position;
+    const ang = b.angle;
+    const verts = b.vertices;
+
+    ctx.save();
+    ctx.translate(pos.x, pos.y);
+    ctx.rotate(ang);
+
+    // Clip to shard polygon
+    ctx.beginPath();
+    const localVerts = verts.map(v => ({
+      x: v.x - pos.x,
+      y: v.y - pos.y
+    }));
+    localVerts.forEach((v, i) => {
+      i === 0 ? ctx.moveTo(v.x, v.y) : ctx.lineTo(v.x, v.y);
+    });
+    ctx.closePath();
+    ctx.clip();
+
+    // Draw captured image region
+    if (capturedImage) {
+      const scaleX = W / capturedImage.width;
+      const scaleY = H / capturedImage.height;
+
+      // The shard's source rectangle mapped to original image
+      const imgSrcX = s.srcX / scaleX;
+      const imgSrcY = s.srcY / scaleY;
+      const imgSrcW = s.srcW / scaleX;
+      const imgSrcH = s.srcH / scaleY;
+
+      ctx.drawImage(
+        capturedImage,
+        imgSrcX, imgSrcY, imgSrcW, imgSrcH,
+        -s.srcW / 2, -s.srcH / 2, s.srcW, s.srcH
+      );
+    } else {
+      // Fallback color
+      ctx.fillStyle = `hsl(${s.col * 30 + s.row * 10}, 70%, 50%)`;
+      ctx.fillRect(-s.srcW/2, -s.srcH/2, s.srcW, s.srcH);
+    }
+
+    // Glass edge effect
+    ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+    ctx.lineWidth   = 1.2;
+    ctx.stroke();
+
+    // Subtle dark vignette on each shard
+    ctx.restore();
+  });
+}
+
+// ─────────────────────────────────────────
+// TOUCH CONTROLS
+// ─────────────────────────────────────────
+function setupTouchControls() {
+  // Tap to fling
+  canvas.addEventListener('touchstart', onTouchStart, { passive: false });
+  canvas.addEventListener('touchmove',  onTouchMove,  { passive: false });
+  canvas.addEventListener('touchend',   onTouchEnd,   { passive: false });
+}
+
+let touches = {};
+
+function onTouchStart(e) {
+  e.preventDefault();
+  Array.from(e.changedTouches).forEach(t => {
+    touches[t.identifier] = { x: t.clientX, y: t.clientY, t: Date.now() };
+  });
+
+  if (e.touches.length === 2) {
+    // Pinch start
+    const [a, b] = e.touches;
+    pinchStartDist = Math.hypot(b.clientX - a.clientX, b.clientY - a.clientY);
+    pinchMidX = (a.clientX + b.clientX) / 2;
+    pinchMidY = (a.clientY + b.clientY) / 2;
+  }
+}
+
+function onTouchMove(e) {
+  e.preventDefault();
+  if (e.touches.length === 2) {
+    const [a, b] = e.touches;
+    const dist = Math.hypot(b.clientX - a.clientX, b.clientY - a.clientY);
+    if (pinchStartDist > 0 && dist < pinchStartDist * 0.75) {
+      // Pinch-in → explode
+      triggerExplosion(pinchMidX, pinchMidY, 18);
+      pinchStartDist = dist;
+      showStatus('💥 Pinch explosion!', 800);
+    }
+  }
+}
+
+function onTouchEnd(e) {
+  e.preventDefault();
+  Array.from(e.changedTouches).forEach(t => {
+    const start = touches[t.identifier];
+    if (!start) return;
+    const dx = t.clientX - start.x;
+    const dy = t.clientY - start.y;
+    const dt = Date.now() - start.t;
+    const dist = Math.hypot(dx, dy);
+
+    if (dist < 15 && dt < 300 && e.touches.length === 0) {
+      // Tap — fling nearest shard
+      flingNearestShard(t.clientX, t.clientY);
+    }
+    delete touches[t.identifier];
+  });
+}
+
+function flingNearestShard(x, y) {
+  let nearest = null, minDist = Infinity;
+  shards.forEach(s => {
+    const d = Math.hypot(s.body.position.x - x, s.body.position.y - y);
+    if (d < minDist) { minDist = d; nearest = s; }
+  });
+  if (nearest && minDist < 120) {
+    const angle = Math.atan2(nearest.body.position.y - y, nearest.body.position.x - x);
+    const force = 0.08;
+    Matter.Body.applyForce(nearest.body, nearest.body.position, {
+      x: Math.cos(angle) * force,
+      y: Math.sin(angle) * force
+    });
+    showStatus('👆 Flung!', 600);
+  }
+}
+
+function triggerExplosion(x, y, strength = 15) {
+  shards.forEach(s => {
+    const dx = s.body.position.x - x;
+    const dy = s.body.position.y - y;
+    const dist = Math.hypot(dx, dy) || 1;
+    const power = strength / dist;
+    Matter.Body.applyForce(s.body, s.body.position, {
+      x: (dx / dist) * power * 0.015,
+      y: (dy / dist) * power * 0.015
+    });
+  });
+
+  // Visual ring
+  shakeRing.style.width  = '0px';
+  shakeRing.style.height = '0px';
+  shakeRing.style.top    = y + 'px';
+  shakeRing.style.left   = x + 'px';
+  shakeRing.style.opacity = '1';
+  shakeRing.style.transition = 'none';
+  requestAnimationFrame(() => {
+    shakeRing.style.transition = 'all 0.5s ease-out';
+    shakeRing.style.width  = '300px';
+    shakeRing.style.height = '300px';
+    shakeRing.style.marginLeft  = '-150px';
+    shakeRing.style.marginTop   = '-150px';
+    shakeRing.style.opacity = '0';
+  });
+}
+
+// ─────────────────────────────────────────
+// DEVICE MOTION (Shake + Rotation)
+// ─────────────────────────────────────────
+function setupDeviceMotion() {
+  if ('DeviceMotionEvent' in window) {
+    if (typeof DeviceMotionEvent.requestPermission === 'function') {
+      DeviceMotionEvent.requestPermission().then(p => {
+        if (p === 'granted') window.addEventListener('devicemotion', onMotion);
+      });
+    } else {
+      window.addEventListener('devicemotion', onMotion);
+    }
+  }
+
+  if ('DeviceOrientationEvent' in window) {
+    window.addEventListener('deviceorientation', onOrientation);
+  }
+}
+
+function onMotion(e) {
+  const acc = e.accelerationIncludingGravity;
+  if (!acc) return;
+
+  const dx = Math.abs(acc.x - lastAcc.x);
+  const dy = Math.abs(acc.y - lastAcc.y);
+  const dz = Math.abs((acc.z||0) - (lastAcc.z||0));
+
+  if ((dx + dy + dz) > 25 && Date.now() - lastShakeTime > 800) {
+    lastShakeTime = Date.now();
+    shakeScatter();
+  }
+
+  lastAcc = { x: acc.x || 0, y: acc.y || 0, z: acc.z || 0 };
+}
+
+function shakeScatter() {
+  showStatus('📳 Shake scatter!', 1000);
+  triggerExplosion(canvas.width / 2, canvas.height / 2, 25);
+
+  // Extra random impulse on every shard
+  shards.forEach(s => {
+    Matter.Body.applyForce(s.body, s.body.position, {
+      x: (Math.random() - 0.5) * 0.06,
+      y: (Math.random() - 0.5) * 0.06
+    });
+    Matter.Body.setAngularVelocity(s.body, (Math.random() - 0.5) * 0.5);
+  });
+}
+
+function onOrientation(e) {
+  // beta = front-back tilt (-180 to 180), gamma = left-right tilt (-90 to 90)
+  const beta  = (e.beta  || 0) * Math.PI / 180;
+  const gamma = (e.gamma || 0) * Math.PI / 180;
+
+  // Map tilt to gravity vector
+  const gx = Math.sin(gamma) * 2;
+  const gy = Math.sin(beta)  * 2;
+
+  engine.gravity.x = Math.max(-3, Math.min(3, gx));
+  engine.gravity.y = Math.max(-3, Math.min(3, gy));
+
+  // Rebuild walls for extreme rotations
+  if (Math.abs(beta) > 1.2 || Math.abs(gamma) > 0.8) {
+    buildWalls();
+  }
+}
+
+// ─────────────────────────────────────────
+// BUTTONS
+// ─────────────────────────────────────────
+function setupButtons() {
+  document.getElementById('explodeBtn').onclick = () => {
+    triggerExplosion(canvas.width / 2, canvas.height / 2, 30);
+    showStatus('💥 BOOM!', 800);
+  };
+
+  document.getElementById('gravBtn').onclick = () => {
+    gravityMode = (gravityMode + 1) % 4;
+    const modes = [
+      { x: 0,  y: 1,  label: '⬇️ Down' },
+      { x: -1, y: 0,  label: '⬅️ Left' },
+      { x: 0,  y: -1, label: '⬆️ Up'   },
+      { x: 1,  y: 0,  label: '➡️ Right' },
+    ];
+    const m = modes[gravityMode];
+    engine.gravity.x = m.x;
+    engine.gravity.y = m.y;
+    buildWalls();
+    showStatus(m.label, 1000);
+  };
+}
+
+// ─────────────────────────────────────────
+// WINDOW RESIZE
+// ─────────────────────────────────────────
+window.addEventListener('resize', () => {
+  if (canvas.style.display === 'none') return;
+  canvas.width  = window.innerWidth;
+  canvas.height = window.innerHeight;
+  buildWalls();
+});
+</script>
+</body>
+</html>
