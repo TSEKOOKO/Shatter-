@@ -1,0 +1,18 @@
+{
+  "name": "UniFloat Ads",
+  "short_name": "UniFloat",
+  "description": "UniFloat Ad Script Generator - Float Your Way Through Campus",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#050d05",
+  "theme_color": "#16a34a",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

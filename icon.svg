@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="100" fill="#050d05"/>
+  <rect width="512" height="512" rx="100" fill="url(#bg)"/>
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#16a34a" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#050d05" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <!-- U letter stylized -->
+  <text x="256" y="320" font-family="Georgia, serif" font-size="280" font-weight="700" fill="#22c55e" text-anchor="middle">U</text>
+  <!-- floating dots -->
+  <circle cx="160" cy="150" r="18" fill="#4ade80" opacity="0.7"/>
+  <circle cx="352" cy="120" r="12" fill="#4ade80" opacity="0.5"/>
+  <circle cx="390" cy="200" r="8" fill="#4ade80" opacity="0.4"/>
+</svg>

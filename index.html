@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+  <meta name="theme-color" content="#16a34a"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="UniFloat"/>
+  <link rel="manifest" href="manifest.json"/>
+  <link rel="apple-touch-icon" href="icon.svg"/>
+  <title>UniFloat Ads</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --green: #22c55e;
+      --green-dark: #16a34a;
+      --green-dim: rgba(34,197,94,0.15);
+      --bg: #050d05;
+      --card: #0c160c;
+      --text: #e8f5e9;
+      --muted: #6b7280;
+      --gold: #fbbf24;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      min-height: 100vh;
+      min-height: -webkit-fill-available;
+      overflow-x: hidden;
+    }
+
+    /* Ambient background */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 100% 50% at 50% -10%, rgba(34,197,94,0.18) 0%, transparent 65%),
+        radial-gradient(ellipse 60% 40% at 80% 80%, rgba(34,197,94,0.06) 0%, transparent 60%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .app {
+      position: relative;
+      z-index: 1;
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 0 0 40px;
+    }
+
+    /* ── Header ── */
+    .header {
+      padding: 52px 24px 24px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .logo-circle {
+      width: 52px;
+      height: 52px;
+      border-radius: 16px;
+      background: linear-gradient(135deg, #16a34a, #4ade80);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 26px;
+      box-shadow: 0 4px 20px rgba(34,197,94,0.4);
+      flex-shrink: 0;
+    }
+
+    .header-text .brand {
+      font-family: 'Playfair Display', serif;
+      font-size: 22px;
+      font-weight: 900;
+      color: #fff;
+      letter-spacing: -0.5px;
+    }
+
+    .header-text .tagline {
+      font-size: 12px;
+      color: var(--green);
+      letter-spacing: 0.5px;
+      margin-top: 2px;
+    }
+
+    /* ── Section ── */
+    .section {
+      padding: 0 20px;
+      margin-bottom: 22px;
+    }
+
+    .section-label {
+      font-size: 10px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 10px;
+      padding-left: 4px;
+    }
+
+    /* ── Chips ── */
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .chip {
+      padding: 9px 16px;
+      border-radius: 50px;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.04);
+      color: #9ca3af;
+      font-size: 13px;
+      font-family: 'DM Sans', sans-serif;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+
+    .chip.active {
+      background: var(--green-dim);
+      border-color: rgba(34,197,94,0.5);
+      color: var(--green);
+      font-weight: 600;
+    }
+
+    /* ── Generate Button ── */
+    .generate-btn {
+      margin: 8px 20px 0;
+      width: calc(100% - 40px);
+      padding: 16px;
+      background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+      border: none;
+      border-radius: 16px;
+      color: #fff;
+      font-size: 16px;
+      font-weight: 600;
+      font-family: 'DM Sans', sans-serif;
+      cursor: pointer;
+      box-shadow: 0 8px 30px rgba(22,163,74,0.4), 0 2px 8px rgba(0,0,0,0.3);
+      transition: transform 0.15s, box-shadow 0.15s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .generate-btn:active {
+      transform: scale(0.97);
+      box-shadow: 0 4px 16px rgba(22,163,74,0.3);
+    }
+
+    .generate-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    /* ── Spinner ── */
+    .spinner {
+      width: 18px;
+      height: 18px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Script Output ── */
+    .script-card {
+      margin: 20px 20px 0;
+      background: var(--card);
+      border: 1px solid rgba(34,197,94,0.2);
+      border-radius: 20px;
+      overflow: hidden;
+      animation: slideUp 0.4s ease;
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .script-top {
+      padding: 16px 18px 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(34,197,94,0.1);
+    }
+
+    .script-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--green);
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    .copy-btn {
+      padding: 7px 16px;
+      background: var(--green-dim);
+      border: 1px solid rgba(34,197,94,0.35);
+      border-radius: 50px;
+      color: var(--green);
+      font-size: 12px;
+      font-weight: 600;
+      font-family: 'DM Sans', sans-serif;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .copy-btn.copied {
+      background: rgba(34,197,94,0.3);
+      color: #fff;
+    }
+
+    .script-body {
+      padding: 18px;
+    }
+
+    .script-text {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px;
+      line-height: 1.85;
+      color: #d1fae5;
+      white-space: pre-wrap;
+    }
+
+    .heygen-tip {
+      margin: 14px 18px 18px;
+      padding: 12px 14px;
+      background: rgba(251,191,36,0.07);
+      border: 1px solid rgba(251,191,36,0.2);
+      border-radius: 12px;
+      font-size: 12px;
+      color: var(--gold);
+      line-height: 1.6;
+    }
+
+    /* ── Error ── */
+    .error-box {
+      margin: 16px 20px 0;
+      padding: 14px 16px;
+      background: rgba(239,68,68,0.08);
+      border: 1px solid rgba(239,68,68,0.25);
+      border-radius: 14px;
+      color: #f87171;
+      font-size: 14px;
+    }
+
+    /* ── Footer ── */
+    .footer {
+      text-align: center;
+      padding: 30px 20px 10px;
+      font-size: 11px;
+      color: rgba(34,197,94,0.3);
+      letter-spacing: 1px;
+    }
+
+    /* ── Install Banner ── */
+    .install-banner {
+      margin: 16px 20px 0;
+      padding: 14px 16px;
+      background: rgba(34,197,94,0.08);
+      border: 1px solid rgba(34,197,94,0.2);
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .install-banner p {
+      font-size: 13px;
+      color: #86efac;
+      line-height: 1.4;
+      flex: 1;
+    }
+
+    .install-btn {
+      padding: 8px 14px;
+      background: var(--green-dark);
+      border: none;
+      border-radius: 10px;
+      color: #fff;
+      font-size: 12px;
+      font-weight: 600;
+      font-family: 'DM Sans', sans-serif;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .divider {
+      height: 1px;
+      background: rgba(34,197,94,0.1);
+      margin: 8px 20px 22px;
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="logo-circle">🌿</div>
+    <div class="header-text">
+      <div class="brand">UniFloat</div>
+      <div class="tagline">Ad Script Generator · by Ronny Smart</div>
+    </div>
+  </div>
+
+  <!-- Install Banner -->
+  <div class="install-banner" id="installBanner" style="display:none">
+    <p>📲 Add UniFloat to your home screen as an app!</p>
+    <button class="install-btn" id="installBtn">Install</button>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- Focus -->
+  <div class="section">
+    <div class="section-label">Focus on</div>
+    <div class="chips" id="angleChips">
+      <button class="chip active" data-value="referral">💸 Referral Earnings</button>
+      <button class="chip" data-value="loans">🏦 Quick Loans</button>
+      <button class="chip" data-value="wallet">👛 Campus Wallet</button>
+      <button class="chip" data-value="games">🎮 Games & Win Cash</button>
+      <button class="chip" data-value="market">🛒 Marketplace</button>
+    </div>
+  </div>
+
+  <!-- Tone -->
+  <div class="section">
+    <div class="section-label">Tone</div>
+    <div class="chips" id="toneChips">
+      <button class="chip active" data-value="hype">🔥 Hype</button>
+      <button class="chip" data-value="chill">😎 Chill</button>
+      <button class="chip" data-value="trust">🤝 Trustworthy</button>
+    </div>
+  </div>
+
+  <!-- Duration -->
+  <div class="section">
+    <div class="section-label">Video Length</div>
+    <div class="chips" id="durationChips">
+      <button class="chip" data-value="15">15 sec</button>
+      <button class="chip active" data-value="30">30 sec</button>
+      <button class="chip" data-value="45">45 sec</button>
+    </div>
+  </div>
+
+  <!-- Generate -->
+  <button class="generate-btn" id="generateBtn" onclick="generate()">
+    ✨ Generate Script
+  </button>
+
+  <!-- Error -->
+  <div class="error-box" id="errorBox" style="display:none"></div>
+
+  <!-- Script Output -->
+  <div class="script-card" id="scriptCard" style="display:none">
+    <div class="script-top">
+      <div class="script-badge">📝 Your Script</div>
+      <button class="copy-btn" id="copyBtn" onclick="copyScript()">📋 Copy</button>
+    </div>
+    <div class="script-body">
+      <div class="script-text" id="scriptText"></div>
+    </div>
+    <div class="heygen-tip">
+      👆 Copy this → paste into <strong>heygen.com</strong> → select your avatar → generate your video!
+    </div>
+  </div>
+
+  <div class="footer">Float Your Way Through Campus 🌿</div>
+</div>
+
+<script>
+  // ── Chip selection ──
+  function setupChips(groupId) {
+    const group = document.getElementById(groupId);
+    group.querySelectorAll('.chip').forEach(btn => {
+      btn.addEventListener('click', () => {
+        group.querySelectorAll('.chip').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+      });
+    });
+  }
+  setupChips('angleChips');
+  setupChips('toneChips');
+  setupChips('durationChips');
+
+  function getActive(groupId) {
+    return document.querySelector(`#${groupId} .chip.active`)?.dataset.value;
+  }
+
+  // ── Generate ──
+  async function generate() {
+    const angle = getActive('angleChips');
+    const tone = getActive('toneChips');
+    const duration = getActive('durationChips');
+
+    const angleMap = {
+      referral: '💸 Referral Earnings — earn UGX 3,000 per friend referred',
+      loans: '🏦 Quick Loans — fast cash for students who are stuck',
+      wallet: '👛 Campus Wallet — send, receive money instantly',
+      games: '🎮 Games & Win Cash — play games and earn real money',
+      market: '🛒 Campus Marketplace — buy and sell on campus'
+    };
+
+    const toneMap = {
+      hype: 'Hype — energetic, exciting, gets people pumped up',
+      chill: 'Chill — relaxed, cool, like talking to a friend',
+      trust: 'Trustworthy — calm, credible, reassuring'
+    };
+
+    const btn = document.getElementById('generateBtn');
+    const errorBox = document.getElementById('errorBox');
+    const scriptCard = document.getElementById('scriptCard');
+
+    btn.disabled = true;
+    btn.innerHTML = '<div class="spinner"></div> Generating...';
+    errorBox.style.display = 'none';
+    scriptCard.style.display = 'none';
+
+    const prompt = `You are a marketing expert writing WhatsApp video ad scripts for UniFloat — a campus fintech PWA for Ugandan university students.
+
+UniFloat features:
+- Digital wallet (send/receive money instantly)
+- Quick loans for students
+- Referral: earn UGX 3,000 per referral, bonuses up to UGX 20,000
+- Campus marketplace
+- Games to win cash
+- MoMo / Pesapal payments
+- Tagline: "Float Your Way Through Campus"
+- Creator: Ronny Smart
+
+Write a ${duration}-second WhatsApp video ad script.
+Focus: ${angleMap[angle]}
+Tone: ${toneMap[tone]}
+Audience: Ugandan university students aged 18-26
+
+Rules:
+- Open with: "My name is Ronny Smart..."
+- First 3 seconds must hook immediately
+- Speak to a broke campus student's real daily pain
+- Make referral earnings feel real and achievable
+- Use casual Ugandan campus language (light slang ok: "mzeei", "naye", "sure sure", "steady")
+- Tight enough for ${duration} seconds when spoken aloud
+- Written as spoken words only — no labels, no bullet points
+- End with: "Sign up on UniFloat today — Float your way through campus!"
+
+Return ONLY the script. No titles, no formatting, no explanation.`;
+
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1000,
+          messages: [{ role: 'user', content: prompt }]
+        })
+      });
+
+      const data = await res.json();
+      const text = data?.content?.find(b => b.type === 'text')?.text?.trim();
+
+      if (text) {
+        document.getElementById('scriptText').textContent = text;
+        document.getElementById('copyBtn').textContent = '📋 Copy';
+        document.getElementById('copyBtn').classList.remove('copied');
+        scriptCard.style.display = 'block';
+        scriptCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } else {
+        throw new Error('Empty response');
+      }
+    } catch(e) {
+      errorBox.textContent = '⚠️ Could not generate. Check your internet and try again.';
+      errorBox.style.display = 'block';
+    }
+
+    btn.disabled = false;
+    btn.innerHTML = '✨ Generate Script';
+  }
+
+  // ── Copy ──
+  function copyScript() {
+    const text = document.getElementById('scriptText').textContent;
+    const btn = document.getElementById('copyBtn');
+    navigator.clipboard.writeText(text).then(() => {
+      btn.textContent = '✅ Copied!';
+      btn.classList.add('copied');
+      setTimeout(() => {
+        btn.textContent = '📋 Copy';
+        btn.classList.remove('copied');
+      }, 2500);
+    });
+  }
+
+  // ── PWA Install ──
+  let deferredPrompt;
+  window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault();
+    deferredPrompt = e;
+    document.getElementById('installBanner').style.display = 'flex';
+  });
+
+  document.getElementById('installBtn')?.addEventListener('click', async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') {
+      document.getElementById('installBanner').style.display = 'none';
+    }
+    deferredPrompt = null;
+  });
+
+  // ── Service Worker ──
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  }
+</script>
+</body>
+</html>
