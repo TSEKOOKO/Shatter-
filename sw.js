@@ -2,7 +2,11 @@ const CACHE = 'unifloat-v1';
 const ASSETS = ['./index.html', './manifest.json', './icon.svg'];
 
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)));
+  e.waitUntil(
+    caches.open(CACHE)
+      .then(c => c.addAll(ASSETS))
+      .catch(err => console.warn('[SW] Cache install failed:', err))
+  );
   self.skipWaiting();
 });
 

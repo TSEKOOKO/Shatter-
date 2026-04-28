@@ -388,6 +388,10 @@
 </div>
 
 <script>
+  // ── API Key — set this to your Anthropic API key ──
+  // WARNING: Do not expose your key publicly. Use a backend proxy in production.
+  window.ANTHROPIC_API_KEY = 'YOUR_API_KEY_HERE';
+
   // ── Chip selection ──
   function setupChips(groupId) {
     const group = document.getElementById(groupId);
@@ -467,7 +471,12 @@ Return ONLY the script. No titles, no formatting, no explanation.`;
     try {
       const res = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': window.ANTHROPIC_API_KEY || '',
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true'
+        },
         body: JSON.stringify({
           model: 'claude-sonnet-4-20250514',
           max_tokens: 1000,

@@ -4,7 +4,7 @@ const ANGLES = [
   { label: "💸 Referral Earnings", value: "referral" },
   { label: "🏦 Quick Loans", value: "loans" },
   { label: "👛 Campus Wallet", value: "wallet" },
-  { label: "🎮 Games & Fun", value: "games" },
+  { label: "🎮 Games & Win Cash", value: "games" },
   { label: "🛒 Marketplace", value: "market" },
 ];
 
@@ -54,6 +54,7 @@ Tone: ${toneLabel}
 Target audience: Ugandan university students aged 18-26
 
 Rules:
+- Open with: "My name is Ronny Smart..."
 - Start with a strong hook (first 3 seconds must grab attention)
 - Speak directly to a broke campus student's real pain
 - Include a clear call to action at the end (sign up / create account)
@@ -67,7 +68,12 @@ Return ONLY the script text. No titles, no labels, no formatting.`;
     try {
       const res = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": window.ANTHROPIC_API_KEY || "",
+          "anthropic-version": "2023-06-01",
+          "anthropic-dangerous-direct-browser-access": "true",
+        },
         body: JSON.stringify({
           model: "claude-sonnet-4-20250514",
           max_tokens: 1000,
