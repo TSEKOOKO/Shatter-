@@ -15,7 +15,7 @@ import { GardenScreen } from "./GardenScreen";
 import { OceanScreen } from "./OceanScreen";
 import { NextHomeScreen, NextScreenId } from "./NextHomeScreen";
 
-type ShellScreen = NextScreenId | "parent-gate";
+type ShellScreen = NextScreenId | "parent-gate" | "home";
 
 function AppContent() {
   const { settings } = useSettings();
