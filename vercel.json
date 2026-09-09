@@ -16,3 +16,8 @@
     }
   ]
 }
+{
+  "outputDirectory": "dist",
+  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }],
+  "headers": [ ... keep as-is ... ]
+}
