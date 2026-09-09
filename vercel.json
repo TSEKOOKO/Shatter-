@@ -1,4 +1,5 @@
 {
+  "outputDirectory": "dist",
   "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }],
   "headers": [
     {
@@ -15,9 +16,4 @@
       ]
     }
   ]
-}
-{
-  "outputDirectory": "dist",
-  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }],
-  "headers": [ ... keep as-is ... ]
 }
